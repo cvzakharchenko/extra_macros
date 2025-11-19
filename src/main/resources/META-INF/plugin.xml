@@ -9,8 +9,6 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.cvzakharchenko.extramacros.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.cvzakharchenko.extramacros.startup.MyProjectActivity" />
         <macro implementation="com.github.cvzakharchenko.extramacros.macros.ReadFromFileMacro"/>
         <notificationGroup
                 id="com.github.cvzakharchenko.extramacros.notifications"
