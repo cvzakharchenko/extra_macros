@@ -11,5 +11,11 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow factoryClass="com.github.cvzakharchenko.extramacros.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
         <postStartupActivity implementation="com.github.cvzakharchenko.extramacros.startup.MyProjectActivity" />
+        <macro implementation="com.github.cvzakharchenko.extramacros.macros.ReadFromFileMacro"/>
+        <notificationGroup
+                id="com.github.cvzakharchenko.extramacros.notifications"
+                displayType="BALLOON"
+                bundle="messages.MyBundle"
+                key="notification.group.extraMacros"/>
     </extensions>
 </idea-plugin>
