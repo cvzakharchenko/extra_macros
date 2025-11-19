@@ -14,19 +14,29 @@ import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
 
-class ReadFromFileMacro : Macro(), MacroWithParams {
+open class ReadFromFileMacro : Macro(), MacroWithParams {
 
     override fun getName() = "ReadFromFile"
 
     override fun getDescription() = MyBundle.message("macro.readFromFile.description")
 
-    override fun expand(dataContext: DataContext): String? = null
+    override fun expand(dataContext: DataContext): String? {
+        val project = CommonDataKeys.PROJECT.getData(dataContext)
+        notifyMissingPath(project)
+        return null
+    }
 
     override fun expand(dataContext: DataContext, vararg args: String?): String? {
         val project = CommonDataKeys.PROJECT.getData(dataContext)
-        val rawPath = args.firstOrNull()?.takeUnless { it.isNullOrBlank() } ?: return null
+        val rawPath = args.firstOrNull()?.takeUnless { it.isNullOrBlank() } ?: run {
+            notifyMissingPath(project)
+            return null
+        }
         val sanitizedPath = rawPath.trim().trim('"')
-        if (sanitizedPath.isEmpty()) return null
+        if (sanitizedPath.isEmpty()) {
+            notifyMissingPath(project)
+            return null
+        }
 
         return try {
             val resolvedPath = resolvePath(sanitizedPath, project)
@@ -77,7 +87,7 @@ class ReadFromFileMacro : Macro(), MacroWithParams {
         return trimmed.startsWith("#") || trimmed.startsWith("//")
     }
 
-    private fun notifyFailure(project: Project?, message: String) {
+    internal open fun notifyFailure(project: Project?, message: String) {
         NotificationGroupManager.getInstance()
             .getNotificationGroup(NOTIFICATION_GROUP_ID)
             .createNotification(
@@ -92,6 +102,13 @@ class ReadFromFileMacro : Macro(), MacroWithParams {
         private val WHITESPACE_REGEX = "\\s+".toRegex()
         private val LOG = Logger.getInstance(ReadFromFileMacro::class.java)
         private const val NOTIFICATION_GROUP_ID = "com.github.cvzakharchenko.extramacros.notifications"
+    }
+
+    private fun notifyMissingPath(project: Project?) {
+        notifyFailure(
+            project,
+            MyBundle.message("macro.readFromFile.error.noArgs")
+        )
     }
 }
 

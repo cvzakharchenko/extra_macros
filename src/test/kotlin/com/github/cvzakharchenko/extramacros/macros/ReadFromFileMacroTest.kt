@@ -3,6 +3,7 @@ package com.github.cvzakharchenko.extramacros.macros
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
+import com.intellij.openapi.project.Project
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import java.nio.file.Files
 import java.nio.file.Path
@@ -38,6 +39,17 @@ class ReadFromFileMacroTest : BasePlatformTestCase() {
         assertNull(result)
     }
 
+    fun testNoArgsShowsErrorNotification() {
+        val macro = TestableReadFromFileMacro()
+        macro.expand(projectDataContext())
+
+        assertEquals(
+            "Expected error notification when no args are provided.",
+            1,
+            macro.notifications.size
+        )
+    }
+
     fun testResolvesRelativePathAgainstProjectRoot() {
         val projectBasePath = project.basePath ?: error("Project base path is null")
         val projectBase = Path.of(projectBasePath)
@@ -56,5 +68,13 @@ class ReadFromFileMacroTest : BasePlatformTestCase() {
 
     private fun projectDataContext(): DataContext =
         SimpleDataContext.getSimpleContext(CommonDataKeys.PROJECT, project)
+
+    private class TestableReadFromFileMacro : ReadFromFileMacro() {
+        val notifications = mutableListOf<String>()
+
+        override fun notifyFailure(project: Project?, message: String) {
+            notifications += message
+        }
+    }
 }
 
