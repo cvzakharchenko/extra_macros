@@ -5,11 +5,9 @@ import com.intellij.ide.macro.Macro
 import com.intellij.ide.macro.MacroWithParams
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
-import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
@@ -32,47 +30,34 @@ open class ReadFromFileMacro : Macro(), MacroWithParams {
             notifyMissingPath(project)
             return null
         }
+
         val sanitizedPath = rawPath.trim().trim('"')
         if (sanitizedPath.isEmpty()) {
             notifyMissingPath(project)
             return null
         }
 
-        return try {
-            val resolvedPath = resolvePath(sanitizedPath, project)
-            normalizeFileContent(resolvedPath, project)
+        val resolvedPath = try {
+            val candidate = Path.of(sanitizedPath)
+            if (candidate.isAbsolute || project?.basePath == null) {
+                candidate.normalize()
+            } else {
+                Path.of(project.basePath!!).resolve(candidate).normalize()
+            }
         } catch (exception: InvalidPathException) {
-            LOG.warn("Invalid file path supplied to ReadFromFile macro: $sanitizedPath", exception)
-            val reason = exception.message
-                ?: MyBundle.message("macro.readFromFile.error.reason.invalidPath")
             notifyFailure(
                 project,
-                MyBundle.message("macro.readFromFile.error.generic", sanitizedPath, reason)
+                MyBundle.message("macro.readFromFile.error.generic", sanitizedPath)
             )
-            null
-        }
-    }
-
-    private fun resolvePath(pathString: String, project: Project?): Path {
-        val candidate = Path.of(pathString)
-
-        if (candidate.isAbsolute || project?.basePath == null) {
-            return candidate
+            return null
         }
 
-        return Path.of(project.basePath!!).resolve(candidate).normalize()
-    }
-
-    private fun normalizeFileContent(path: Path, project: Project?): String? {
         val processed = try {
-            Files.readAllLines(path).asSequence()
-        } catch (exception: IOException) {
-            LOG.warn("Failed to read file for ReadFromFile macro: $path", exception)
-            val reason = exception.message
-                ?: MyBundle.message("macro.readFromFile.error.reason.io")
+            Files.readAllLines(resolvedPath).asSequence()
+        } catch (exception: Exception) {
             notifyFailure(
                 project,
-                MyBundle.message("macro.readFromFile.error.generic", path, reason)
+                MyBundle.message("macro.readFromFile.error.generic", resolvedPath)
             )
             return null
         }.filterNot(::isCommentLine)
@@ -100,7 +85,6 @@ open class ReadFromFileMacro : Macro(), MacroWithParams {
 
     companion object {
         private val WHITESPACE_REGEX = "\\s+".toRegex()
-        private val LOG = Logger.getInstance(ReadFromFileMacro::class.java)
         private const val NOTIFICATION_GROUP_ID = "com.github.cvzakharchenko.extramacros.notifications"
     }
 
