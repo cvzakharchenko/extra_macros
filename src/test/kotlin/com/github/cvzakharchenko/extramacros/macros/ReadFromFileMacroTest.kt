@@ -1,5 +1,6 @@
 package com.github.cvzakharchenko.extramacros.macros
 
+import com.github.cvzakharchenko.extramacros.MyBundle
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
@@ -39,9 +40,19 @@ class ReadFromFileMacroTest : BasePlatformTestCase() {
         assertNull(result)
     }
 
-    fun testNoArgsShowsErrorNotification() {
+    fun testNoArgsPreviewReturnsUsageMessage() {
+        val message = ReadFromFileMacro().expand(emptyDataContext())
+
+        assertEquals(
+            "ReadFromFile preview should display usage instructions.",
+            MyBundle.message("macro.readFromFile.error.noArgs"),
+            message
+        )
+    }
+
+    fun testInvocationWithoutArgsShowsErrorNotification() {
         val macro = TestableReadFromFileMacro()
-        macro.expand(projectDataContext())
+        macro.expand(projectDataContext(), *emptyArray<String?>())
 
         assertEquals(
             "Expected error notification when no args are provided.",

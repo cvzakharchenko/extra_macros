@@ -18,11 +18,7 @@ open class ReadFromFileMacro : Macro(), MacroWithParams {
 
     override fun getDescription() = MyBundle.message("macro.readFromFile.description")
 
-    override fun expand(dataContext: DataContext): String? {
-        val project = CommonDataKeys.PROJECT.getData(dataContext)
-        notifyMissingPath(project)
-        return null
-    }
+    override fun expand(dataContext: DataContext): String? = missingPathMessage()
 
     override fun expand(dataContext: DataContext, vararg args: String?): String? {
         val project = CommonDataKeys.PROJECT.getData(dataContext)
@@ -89,10 +85,9 @@ open class ReadFromFileMacro : Macro(), MacroWithParams {
     }
 
     private fun notifyMissingPath(project: Project?) {
-        notifyFailure(
-            project,
-            MyBundle.message("macro.readFromFile.error.noArgs")
-        )
+        notifyFailure(project, missingPathMessage())
     }
+
+    private fun missingPathMessage() = MyBundle.message("macro.readFromFile.error.noArgs")
 }
 
